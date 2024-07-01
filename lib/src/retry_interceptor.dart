@@ -123,7 +123,7 @@ class RetryInterceptor extends Interceptor {
     bool isRequestCancelled() =>
         err.requestOptions.cancelToken?.isCancelled ?? false;
 
-    bool res = false;
+    bool? res = false;
     if (repetitionCondition != null) {
       res = await repetitionCondition!() ?? false;
       if (res == false) {
