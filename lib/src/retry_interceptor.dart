@@ -126,6 +126,9 @@ class RetryInterceptor extends Interceptor {
     bool res = false;
     if (repetitionCondition != null) {
       res = await repetitionCondition!() ?? false;
+      if(res==false){
+        return super.onError(err, handler);
+      }
     }
 
     final attempt = err.requestOptions._attempt + 1;
