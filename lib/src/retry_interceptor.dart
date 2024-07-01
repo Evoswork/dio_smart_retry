@@ -11,12 +11,15 @@ typedef RetryEvaluator = FutureOr<bool> Function(
   int attempt,
 );
 
+typedef RepetitionCondition = Future<bool?> Function();
+
 /// An interceptor that will try to send failed request again
 class RetryInterceptor extends Interceptor {
   RetryInterceptor({
     required this.dio,
     this.logPrint,
     this.retries = 3,
+    this.repetitionCondition,
     this.retryDelays = const [
       Duration(seconds: 1),
       Duration(seconds: 3),
@@ -68,6 +71,8 @@ class RetryInterceptor extends Interceptor {
   ///   the last element value of [retryDelays] will be used.
   final List<Duration> retryDelays;
 
+  final RepetitionCondition? repetitionCondition;
+
   /// Evaluating if a retry is necessary.regarding the error.
   ///
   /// It can be a good candidate for additional operations too, like
@@ -118,10 +123,15 @@ class RetryInterceptor extends Interceptor {
     bool isRequestCancelled() =>
         err.requestOptions.cancelToken?.isCancelled ?? false;
 
+    bool res = false;
+    if (repetitionCondition != null) {
+      res = await repetitionCondition!() ?? false;
+    }
+
     final attempt = err.requestOptions._attempt + 1;
     final shouldRetry = attempt <= retries && await _shouldRetry(err, attempt);
 
-    if (!shouldRetry) {
+    if (res == false && !shouldRetry) {
       return super.onError(err, handler);
     }
 
